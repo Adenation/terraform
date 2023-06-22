@@ -1,44 +1,57 @@
 resource "random_pet" "rg_name" {
-  prefix = var.resource_group_name_prefix
+  prefix = "rg"
 }
 
 resource "azurerm_resource_group" "rg" {
-  location = var.resource_group_location
-  name     = random_pet.rg_name.id
+  name     = "tf-lab"
+  location = "northeurope"
+  
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_storage_account" "storage" {
   name                     = "adentfstorageaccount"
   resource_group_name      = azurerm_resource_group.rg.name
-  location                 = var.resource_group_location
+  location                 = azurerm_resource_group.rg.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
-  // Add other configuration seadentfings for the storage account
+  
+  identity {
+	type = "SystemAssigned"
+  }
+}
+
+resource "azurerm_storage_container" "gen_storage_container" {
+  name                  = "adentfcontainer"
+  storage_account_name  = azurerm_storage_account.storage.name
+  container_access_type = "private"
 }
 
 resource "azurerm_data_factory" "adf" {
   name                = "adentfdatafactory"
-  location            = var.resource_group_location
+  location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
 
 resource "azurerm_databricks_workspace" "databricks" {
   name                = "adentfdatabricks"
-  location            = var.resource_group_location
+  location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   sku                 = "standard"
 }
 
 resource "azurerm_sql_database" "sqldb" {
   name                = "adentfsqldb"
-  location            = var.resource_group_location
+  location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   server_name         = azurerm_mssql_server.sqlserver.name
 }
 
 resource "azurerm_mssql_server" "sqlserver" {
   name                         = "adentfsqlserver"
-  location                     = var.resource_group_location
+  location                     = azurerm_resource_group.rg.location
   resource_group_name          = azurerm_resource_group.rg.name
   version                      = "12.0"
   administrator_login          = "adminuser"
