@@ -6,7 +6,7 @@
 trigger: none
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: ubuntu-latest
 
 variables:
   resourcegroup: "tf-lab"
@@ -20,55 +20,38 @@ stages:
       - job: create
         continueOnError: false
         steps:
-          - task: PowerShell@2
-            displayName: 'Install Terraform'
+          - task: TerraformInstaller@1
+            displayName: tfinstall
             inputs:
-              targetType: 'inline'
-              script: |
-                # Install Terraform
-                $url = "https://releases.hashicorp.com/terraform/1.0.9/terraform_1.0.9_linux_amd64.zip"
-                $zipFile = "$env:TEMP/terraform.zip"
-                $installDir = "$env:AGENT_TOOLSDIRECTORY/Terraform/1.0.9/x64"
-                
-                Invoke-WebRequest -Uri $url -OutFile $zipFile
-                Expand-Archive -Path $zipFile -DestinationPath $installDir
-                
-                # Add Terraform to the PATH
-                $env:PATH += ";$installDir"
-                
-                # Verify Terraform installation
-                terraform --version
-              
-          - task: PowerShell@2
-            displayName: 'Terraform Init'
+              terraformVersion: 'latest'
+          - task: TerraformTaskV4@4
+            displayName: init
             inputs:
-              targetType: 'inline'
-              script: |
-                cd $(System.DefaultWorkingDirectory)
-                terraform init -backend-config="resource_group_name=$(resourcegroup)" -backend-config="storage_account_name=$(storageacc)" -backend-config="container_name=$(stcontainer)" -backend-config="key=$(storagekey)"
-              
-          - task: PowerShell@2
-            displayName: 'Terraform Validate'
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              backendServiceArm: 'AdenARM'
+              backendAzureRmResourceGroupName: '$(resourcegroup)'
+              backendAzureRmStorageAccountName: '$(storageacc)'
+              backendAzureRmContainerName: '$(stcontainer)'
+              backendAzureRmKey: '$(storagekey)'
+          - task: TerraformTaskV4@4
+            displayName: validate
             inputs:
-              targetType: 'inline'
-              script: |
-                cd $(System.DefaultWorkingDirectory)
-                terraform validate
-              
-          - task: PowerShell@2
-            displayName: 'Terraform Plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              provider: 'azurerm'
+              command: 'validate'
+          - task: TerraformTaskV4@4
+            displayName: plan
             inputs:
-              targetType: 'inline'
-              script: |
-                cd $(System.DefaultWorkingDirectory)
-                terraform plan -out=tfplan -input=false
-              
-          - task: PowerShell@2
-            displayName: 'Terraform Apply'
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              environmentServiceNameAzureRM: 'AdenARM'
+          - task: TerraformTaskV4@4
+            displayName: apply
             inputs:
-              targetType: 'inline'
-              script: |
-                cd $(System.DefaultWorkingDirectory)
-                terraform apply -input=false -auto-approve tfplan
-
-
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              environmentServiceNameAzureRM: 'AdenARM'
