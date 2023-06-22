@@ -18,11 +18,23 @@ steps:
 
 - task: AzureCLI@2
   inputs:
-    azureSubscription: AdenARM
+    azureSubscription: 'AdenARM'
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      cd $(System.DefaultWorkingDirectory)/terraform
+      cd $(Build.SourcesDirectory)/path/to/terraform/code
+      
+      # Import the resource group
+      terraform import azurerm_resource_group.rg /subscriptions/$(azureSubscriptionId)/resourceGroups/tf-lab
+      
+      # Initialize Terraform
       terraform init
+      
+      # Validate the Terraform configuration
+      terraform validate
+      
+      # Plan the deployment
       terraform plan -out=tfplan -input=false
+      
+      # Apply the changes
       terraform apply -input=false -auto-approve tfplan
