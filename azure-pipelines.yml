@@ -3,38 +3,55 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-trigger:
-  branches:
-    include:
-      - main
+trigger: none
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: ubuntu-latest
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
+variables:
+  resourcegroup: "tf-lab"
+  storageacc: "adentfstorage"
+  stcontainer: "landing"
+  storagekey: "devpipeline.terraform.tfstate"
 
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'AdenARM'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      cd $(Build.SourcesDirectory)/path/to/terraform/code
-      
-      # Import the resource group
-      terraform import azurerm_resource_group.rg /subscriptions/$(azureSubscriptionId)/resourceGroups/tf-lab
-      
-      # Initialize Terraform
-      terraform init
-      
-      # Validate the Terraform configuration
-      terraform validate
-      
-      # Plan the deployment
-      terraform plan -out=tfplan -input=false
-      
-      # Apply the changes
-      terraform apply -input=false -auto-approve tfplan
+stages:
+  - stage: tfapply
+    jobs:
+      - job: create
+        continueOnError: false
+        steps:
+          - task: TerraformInstaller@1
+            displayName: tfinstall
+            inputs:
+              terraformVersion: 'latest'
+          - task: TerraformTaskV4@4
+            displayName: init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              backendServiceArm: 'AdenARM'
+              backendAzureRmResourceGroupName: '$(resourcegroup)'
+              backendAzureRmStorageAccountName: '$(storageacc)'
+              backendAzureRmContainerName: '$(stcontainer)'
+              backendAzureRmKey: '$(storagekey)'
+          - task: TerraformTaskV4@4
+            displayName: validate
+            inputs:
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              provider: 'azurerm'
+              command: 'validate'
+          - task: TerraformTaskV4@4
+            displayName: plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              environmentServiceNameAzureRM: 'AdenARM'
+          - task: TerraformTaskV4@4
+            displayName: apply
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              environmentServiceNameAzureRM: 'AdenARM'

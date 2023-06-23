@@ -11,6 +11,12 @@ terraform {
       version = "~>3.0"
     }
   }
+  backend "azurerm" {
+    resource_group_name = "tf-lab"
+    storage_account_name = "adentfstorageaccount"
+    container_name = "landing"
+    key = "devpipeline.terraform.tfstate"
+  }
 }
 
 provider "azurerm" {
