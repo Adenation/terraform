@@ -1,0 +1,32 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'AdenARM'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      cd $(Build.SourcesDirectory)/path/to/terraform/code
+      
+      # Import the resource group
+      terraform import azurerm_resource_group.rg /subscriptions/$(azureSubscriptionId)/resourceGroups/tf-lab
+      
+      # Destroy the resources
+      terraform destroy 
