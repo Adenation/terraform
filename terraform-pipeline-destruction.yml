@@ -33,4 +33,4 @@ steps:
       terraform init
 
       # Destroy the resources
-      terraform destroy 
+      #terraform destroy 
