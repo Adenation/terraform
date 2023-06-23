@@ -13,8 +13,9 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.x'
 
 
 - task: AzureCLI@2
@@ -23,7 +24,7 @@ steps:
     scriptType: 'bash'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      cd $(Build.SourcesDirectory)/path/to/terraform/code
+      cd $(Build.SourcesDirectory)
       
       # Import the resource group
       terraform import azurerm_resource_group.rg /subscriptions/$(azureSubscriptionId)/resourceGroups/tf-lab
