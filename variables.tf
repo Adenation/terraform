@@ -10,5 +10,5 @@ variable "resource_group_name_prefix" {
 
 variable azurerm_resource_group {
 	default = "tf-lab"
-	description = "Name of the resource group
+	description = "Name of the resource group"
 }
