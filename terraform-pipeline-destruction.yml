@@ -28,5 +28,8 @@ steps:
       # Import the resource group
       terraform import azurerm_resource_group.rg /subscriptions/$(azureSubscriptionId)/resourceGroups/tf-lab
       
+      # Initialize the resources
+      terraform init
+
       # Destroy the resources
       terraform destroy 
