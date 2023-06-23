@@ -2,15 +2,6 @@ resource "random_pet" "rg_name" {
   prefix = "rg"
 }
 
-resource "azurerm_resource_group" "rg" {
-  name     = "tf-lab"
-  location = "northeurope"
-  
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
 resource "azurerm_storage_account" "storage" {
   name                     = "adentfstorageaccount"
   resource_group_name      = azurerm_resource_group.rg.name
