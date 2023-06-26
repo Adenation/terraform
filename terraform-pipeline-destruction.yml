@@ -4,33 +4,54 @@
 # https://aka.ms/yaml
 
 
-trigger:
-  branches:
-    include:
-      - main
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
 
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
+variables:
+  resourcegroup: "tf-lab"
+  storageacc: "adentfstorage"
+  stcontainer: "landing"
+  storagekey: "devpipeline.terraform.tfstate"
 
-
-- task: AzureCLI@2
-  inputs:
-    azureSubscription: 'AdenARM'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      cd $(Build.SourcesDirectory)
-      
-      # Import the resource group
-      terraform import azurerm_resource_group.rg /subscriptions/$(azureSubscriptionId)/resourceGroups/tf-lab
-      
-      # Initialize the resources
-      terraform init
-
-      # Destroy the resources
-      #terraform destroy 
+stages:
+  - stage: tfdestroy
+    jobs:
+      - job: destroy
+        continueOnError: false
+        steps:
+          - task: TerraformInstaller@1
+            displayName: tfinstall
+            inputs:
+              terraformVersion: 'latest'
+          - task: TerraformTaskV4@4
+            displayName: init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              backendServiceArm: 'AdenARM'
+              backendAzureRmResourceGroupName: '$(resourcegroup)'
+              backendAzureRmStorageAccountName: '$(storageacc)'
+              backendAzureRmContainerName: '$(stcontainer)'
+              backendAzureRmKey: '$(storagekey)'
+          - task: TerraformTaskV4@4
+            displayName: plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              environmentServiceNameAzureRM: 'AdenARM'
+              commandOptions: '-destroy'
+          - task: TerraformTaskV4@4
+            displayName: destroy
+            inputs:
+              provider: 'azurerm'
+              command: 'destroy'
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              environmentServiceNameAzureRM: 'AdenARM'
+              commandOptions: '-auto-approve'
